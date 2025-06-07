@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка команды /start."""
     keyboard = [
-        # Каждый элемент списка - это ряд кнопок
         [InlineKeyboardButton("🎲 Рандомный факт", callback_data="random_fact")],
         [InlineKeyboardButton("🤖 ChatGPT", callback_data="gpt_interface")],
         [InlineKeyboardButton("💬 Диалог с личностью", callback_data="talk_interface")],
