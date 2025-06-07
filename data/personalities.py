@@ -1,7 +1,5 @@
 """Данные о личностях для диалогов."""
-
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-
 PERSONALITIES = {
     "einstein": {
         "name": "Альберт Эйнштейн",
@@ -62,7 +60,6 @@ PERSONALITIES = {
 
 def get_personality_keyboard():
     """Возвращает клавиатуру с выбором личностей."""
-
     keyboard = []
     for key, personality in PERSONALITIES.items():
         keyboard.append([

@@ -1,4 +1,3 @@
-# Импорт необходимых модулей
 import logging
 import os
 import re
@@ -7,10 +6,8 @@ from telegram.ext import ContextTypes
 from services.openai_client import get_personality_response
 from data.quiz_topics import get_quiz_topics_keyboard, get_quiz_topic_data, get_quiz_continue_keyboard
 
-# Инициализация логгера
 logger = logging.getLogger(__name__)
 
-# Определение состояний для ConversationHandler
 SELECTING_TOPIC, ANSWERING_QUESTION = range(2)
 
 
@@ -26,7 +23,6 @@ async def quiz_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         image_path = "data/images/quiz.png"
         logger.info(f'В квизе используется картинка: {image_path}')
 
-        # Текст приветственного сообщения
         message_text = (
             "🧠 <b>Квиз - проверь свои знания!</b>\n\n"
             "Выберите тему для квиза:\n\n"
@@ -38,18 +34,14 @@ async def quiz_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Выберите тему:"
         )
 
-        # Получаем клавиатуру с темами квиза
         keyboard = get_quiz_topics_keyboard()
 
-        # Инициализация счетчиков правильных ответов
         if 'quiz_score' not in context.user_data:
-            context.user_data['quiz_score'] = 0  # Количество правильных ответов
-            context.user_data['quiz_total'] = 0  # Общее количество вопросов
+            context.user_data['quiz_score'] = 0
+            context.user_data['quiz_total'] = 0
 
-        # Обработка callback query (если переход из другого меню)
         if update.callback_query:
             if os.path.exists(image_path):
-                # Удаляем старое сообщение и отправляем новое с фото
                 await update.callback_query.message.delete()
                 with open(image_path, 'rb') as photo:
                     await context.bot.send_photo(
@@ -60,7 +52,6 @@ async def quiz_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         reply_markup=keyboard
                     )
             else:
-                # Редактируем существующее сообщение (без фото)
                 await update.callback_query.edit_message_text(
                     message_text,
                     parse_mode='HTML',
@@ -69,7 +60,6 @@ async def quiz_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.callback_query.answer()
 
         else:
-            # Обработка обычной команды /quiz
             if os.path.exists(image_path):
                 with open(image_path, 'rb') as photo:
                     await update.message.reply_photo(
@@ -85,7 +75,7 @@ async def quiz_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     reply_markup=keyboard
                 )
 
-        return SELECTING_TOPIC  # Переход в состояние выбора темы
+        return SELECTING_TOPIC
 
     except Exception as e:
         logger.error(f"Ошибка при запуске квиза: {e}")
@@ -96,48 +86,40 @@ async def quiz_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text(error_text)
 
-        return -1  # Завершение ConversationHandler
+        return -1
 
 
 async def topic_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка выбора темы квиза"""
     query = update.callback_query
-    await query.answer()  # Подтверждаем получение callback
+    await query.answer()
 
     try:
-        # Извлекаем ключ темы из callback_data
         topic_key = query.data.replace("quiz_topic_", "")
-        # Получаем данные о теме
         topic_data = get_quiz_topic_data(topic_key)
 
         if not topic_data:
-            # Обработка случая, когда тема не найдена
             if query.message.photo:
                 await query.edit_message_caption("❌ Ошибка: тема не найдена.")
             else:
                 await query.edit_message_text("❌ Ошибка: тема не найдена.")
             return -1
 
-        # Сохраняем выбранную тему в user_data
         context.user_data['current_quiz_topic'] = topic_key
         context.user_data['quiz_topic_data'] = topic_data
 
-        # Отправляем сообщение о генерации вопроса
         processing_text = f"{topic_data['emoji']} Генерирую вопрос по теме {topic_data['name']}... ⏳"
         if query.message.photo:
             await query.edit_message_caption(processing_text, parse_mode='HTML')
         else:
             await query.edit_message_text(processing_text, parse_mode='HTML')
 
-        # Генерируем вопрос с помощью ChatGPT
         question = await get_personality_response("Создай вопрос для квиза", topic_data['prompt'])
         context.user_data['current_question'] = question
 
-        # Извлекаем правильный ответ из текста вопроса
         correct_answer = extract_correct_answer(question)
         context.user_data['correct_answer'] = correct_answer
 
-        # Формируем текст вопроса
         message_text = (
             f"{topic_data['emoji']} <b>Квиз: {topic_data['name']}</b>\n\n"
             f"{question}\n\n"
@@ -145,7 +127,6 @@ async def topic_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "✍️ Напишите ваш ответ (A, B, C или D):"
         )
 
-        # Отправляем вопрос пользователю
         if query.message.photo:
             await query.edit_message_caption(
                 caption=message_text,
@@ -157,7 +138,7 @@ async def topic_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode='HTML'
             )
 
-        return ANSWERING_QUESTION  # Переход в состояние ответа на вопрос
+        return ANSWERING_QUESTION
 
     except Exception as e:
         logger.error(f"Ошибка при выборе темы квиза: {e}")
@@ -177,9 +158,7 @@ async def topic_selected(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка ответа пользователя на вопрос квиза"""
     try:
-        # Получаем и нормализуем ответ пользователя
         user_answer = update.message.text.strip().upper()
-        # Получаем правильный ответ и данные темы
         correct_answer = context.user_data.get('correct_answer', '').upper()
         topic_data = context.user_data.get('quiz_topic_data')
         current_question = context.user_data.get('current_question', '')
@@ -190,22 +169,17 @@ async def handle_quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE)
             )
             return -1
 
-        # Показываем индикатор "печатает"
         await context.bot.send_chat_action(chat_id=update.effective_chat.id, action="typing")
-        # Проверяем правильность ответа
         is_correct = user_answer == correct_answer
 
-        # Обновляем счетчики
         context.user_data['quiz_total'] += 1
         if is_correct:
             context.user_data['quiz_score'] += 1
 
-        # Отправляем сообщение о проверке ответа
         processing_msg = await update.message.reply_text(
             f"{topic_data['emoji']} Проверяю ответ... ⏳"
         )
 
-        # Формируем промпт для анализа ответа
         analysis_prompt = f"""Пользователь ответил '{user_answer}' на вопрос:
         {current_question}
 
@@ -217,16 +191,13 @@ async def handle_quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE)
         detailed_response = await get_personality_response(analysis_prompt,
                                                            "Ты эксперт по квизам, объясняешь ответы понятно и интересно.")
 
-        # Формируем текст результата
         if is_correct:
             result_text = f"✅ <b>Правильно!</b>\n\n{detailed_response}"
         else:
             result_text = f"❌ <b>Неправильно!</b>\n\nПравильный ответ: <b>{correct_answer}</b>\n\n{detailed_response}"
 
-        # Получаем клавиатуру для продолжения
         keyboard = get_quiz_continue_keyboard(context.user_data['current_quiz_topic'])
 
-        # Удаляем сообщение о проверке и отправляем результат
         await processing_msg.delete()
         await update.message.reply_text(
             f"{topic_data['emoji']} <b>Результат квиза</b>\n\n"
@@ -236,7 +207,7 @@ async def handle_quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE)
             reply_markup=keyboard
         )
 
-        return ANSWERING_QUESTION  # Остаемся в состоянии ответа на вопросы
+        return ANSWERING_QUESTION
 
     except Exception as e:
         logger.error(f"Ошибка при обработке ответа квиза: {e}")
@@ -249,30 +220,25 @@ async def handle_quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def handle_quiz_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обработка callback-кнопок в квизе"""
     query = update.callback_query
-    await query.answer()  # Подтверждаем получение callback
+    await query.answer()
 
     try:
         if query.data.startswith("quiz_continue_"):
-            # Продолжаем квиз с той же темой
             topic_key = query.data.replace("quiz_continue_", "")
             context.user_data['current_quiz_topic'] = topic_key
             context.user_data['quiz_topic_data'] = get_quiz_topic_data(topic_key)
 
-            # Эмулируем выбор темы для генерации нового вопроса
             fake_query_data = f"quiz_topic_{topic_key}"
             query.data = fake_query_data
             return await topic_selected(update, context)
 
         elif query.data == "quiz_change_topic":
-            # Возвращаем к выбору темы
             return await quiz_start(update, context)
 
         elif query.data == "quiz_finish":
-            # Завершаем квиз и показываем результаты
             score = context.user_data.get('quiz_score', 0)
             total = context.user_data.get('quiz_total', 0)
 
-            # Рассчитываем процент и определяем оценку
             if total > 0:
                 percentage = round((score / total) * 100)
                 if percentage >= 80:
@@ -292,7 +258,6 @@ async def handle_quiz_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                 emoji = "🤔"
                 grade = "Попробуйте еще раз!"
 
-            # Формируем финальное сообщение
             final_text = (
                 f"{emoji} <b>Квиз завершен!</b>\n\n"
                 f"📊 <b>Финальный результат:</b>\n"
@@ -302,7 +267,6 @@ async def handle_quiz_callback(update: Update, context: ContextTypes.DEFAULT_TYP
                 "Спасибо за участие! 🎉"
             )
 
-            # Очищаем данные квиза
             context.user_data.pop('quiz_score', None)
             context.user_data.pop('quiz_total', None)
             context.user_data.pop('current_quiz_topic', None)
@@ -310,7 +274,6 @@ async def handle_quiz_callback(update: Update, context: ContextTypes.DEFAULT_TYP
             context.user_data.pop('current_question', None)
             context.user_data.pop('correct_answer', None)
 
-            # Создаем клавиатуру главного меню
             keyboard = [
                 [InlineKeyboardButton("🎲 Случайный факт", callback_data="random_interface")],
                 [InlineKeyboardButton("🤖 ChatGPT", callback_data="gpt_interface")],
@@ -319,13 +282,12 @@ async def handle_quiz_callback(update: Update, context: ContextTypes.DEFAULT_TYP
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
-            # Отправляем финальное сообщение
             await query.edit_message_text(
                 final_text,
                 parse_mode='HTML',
                 reply_markup=reply_markup
             )
-            return -1  # Завершение ConversationHandler
+            return -1
 
     except Exception as e:
         logger.error(f"Ошибка в quiz callback: {e}")
@@ -349,7 +311,7 @@ def extract_correct_answer(question_text):
         if match:
             return match.group(1)
 
-        return 'A'  # Значение по умолчанию
+        return 'A'
     except Exception as e:
         logger.error(f"Ошибка при извлечении правильного ответа: {e}")
         return 'A'

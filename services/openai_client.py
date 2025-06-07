@@ -4,7 +4,6 @@ from config import CHATGPT_TOKEN
 
 logger = logging.getLogger(__name__)
 
-# Инициализируем клиент OpenAI
 client = OpenAI(api_key=CHATGPT_TOKEN)
 
 
