@@ -1,3 +1,4 @@
+"""Файл реализует интерфейс для взаимодействия с ChatGPT"""
 import logging
 from openai.types.beta.threads import Message
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputFile

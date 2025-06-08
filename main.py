@@ -1,3 +1,4 @@
+"""Основной модуль запуска Telegram-бота"""
 import logging
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, filters
 from config import TG_BOT_TOKEN

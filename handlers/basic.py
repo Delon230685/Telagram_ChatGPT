@@ -1,4 +1,4 @@
-"""Файл с хендлерами бота."""
+"""Модуль обработки главного меню Telegram-бота"""
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes

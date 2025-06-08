@@ -1,3 +1,4 @@
+"""Модуль для работы с OpenAI"""
 from openai import OpenAI
 import logging
 from config import CHATGPT_TOKEN

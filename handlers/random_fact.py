@@ -1,3 +1,4 @@
+"""Файл обработки команд для случайного факта"""
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes

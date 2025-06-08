@@ -1,3 +1,4 @@
+"""Файл обработки команд для рекомендаций фильмов, музыки, игр и книг"""
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, CallbackQueryHandler, CommandHandler, ConversationHandler

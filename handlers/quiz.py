@@ -1,3 +1,4 @@
+"""Файл обработки команд для функционала квизов"""
 import logging
 import os
 import re

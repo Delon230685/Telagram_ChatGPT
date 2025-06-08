@@ -1,3 +1,4 @@
+"""Модуль данных и интерфейсов для квиз-функционала Telegram-бота"""
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
 QUIZ_TOPICS = {

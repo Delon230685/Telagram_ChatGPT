@@ -1,4 +1,4 @@
-"""Данные о личностях для диалогов."""
+"""Модуль с данными о личностях для диалогов."""
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 PERSONALITIES = {
     "einstein": {

@@ -1,8 +1,9 @@
+"""Файл обработки команд для перевода текста"""
 import logging
 import os
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, ConversationHandler, MessageHandler, filters, CommandHandler, CallbackQueryHandler
-from services.openai_client import get_chatgpt_response  # Импорт функции для работы с ChatGPT
+from services.openai_client import get_chatgpt_response
 
 logger = logging.getLogger(__name__)
 
